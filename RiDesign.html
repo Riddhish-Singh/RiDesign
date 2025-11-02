@@ -110,6 +110,22 @@
     .call-to-action{display:inline-block;padding:10px 14px;border-radius:8px;text-decoration:none;font-weight:700}
     .cta-primary{background:var(--accent);color:#fff}
     .cta-outline{background:#fff;border:1px solid #eef3ff;color:#0b1220}
+    /* Accordion Styles */
+    .site-accordion{margin:18px 0;border-radius:8px;overflow:hidden;border:1px solid #eef3ff;background:#fff;}
+    .site-accordion details{border-bottom:1px solid #eef3ff;}
+    .site-accordion details:last-child{border-bottom:none;}
+    .site-accordion summary{padding:12px 16px;cursor:pointer;font-weight:600;outline:none;background:#f9fbfc;color:var(--text);}
+    .site-accordion-content{padding:12px 16px;white-space:pre-wrap;color:var(--muted);}
+    /* Table Styles */
+    .site-table-wrap{overflow-x:auto;}
+    .site-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;border:1px solid #eef3ff;border-radius:8px;overflow:hidden;}
+    .site-table th, .site-table td{padding:10px;border:1px solid #eef3ff;text-align:left;}
+    .site-table th{background:#f9fbfc;font-weight:700;color:var(--text);}
+    /* Quote Styles (New) */
+    .site-quote{font-style:italic;font-size:1.2rem;padding:20px;border-left:4px solid var(--accent);background:var(--panel);border-radius:8px;margin:18px 0;}
+    .site-quote footer{margin-top:12px;font-size:0.9rem;font-style:normal;color:var(--muted);text-align:right;}
+    .site-quote footer strong{font-weight:700;color:var(--text);}
+    
     @media (max-width:920px){ .wrap{flex-direction:column;padding:12px} aside{width:100%} }
 	    footer {
       background: rgba(255, 255, 255, 0.6);
@@ -139,6 +155,12 @@
 
       <label>Color Theme</label>
       <select id="themeSelect"></select>
+      
+      <div style="margin-top:12px;display:flex;gap:8px">
+          <button class="btn" id="loadBtn">💾 Load Site</button>
+          <button class="btn btn-primary" id="saveBtn">💾 Save Site</button>
+      </div>
+      <div class="muted-small">Saves to/loads from your browser's local storage.</div>
 
       <label style="margin-top:12px">Add block</label>
       <div class="row" style="gap:8px;flex-wrap:wrap">
@@ -150,6 +172,10 @@
         <button class="btn" data-add="button">Button</button>
         <button class="btn" data-add="card">Card</button>
         <button class="btn" data-add="section">Section</button>
+        <button class="btn" data-add="accordion">Accordion</button>
+        <button class="btn" data-add="table">Table</button>
+        <button class="btn" data-add="quote">Quote</button>
+        <button class="btn" data-add="custom-css">Custom CSS</button>
       </div>
 
       <label style="margin-top:12px">Blocks (drag to reorder)</label>
@@ -194,20 +220,24 @@
     /* --------- State & helpers --------- */
     const themePresets = {
       // Themes adopted from RiDesign.html, with inferred accent colors for consistency
-      light: { name: 'Clean Light', vars: { '--bg': '#ffffff', '--text': '#0b1220', '--muted': '#64748b', '--accent': '#2563eb' } },
-      dark: { name: 'Midnight', vars: { '--bg': '#071428', '--text': '#e6eef8', '--muted': '#9aa6bf', '--accent': '#06b6d4' } },
-      royal: { name: 'Royal Lux', vars: { '--bg': '#0f1724', '--text': '#fff1e6', '--muted': '#d4b6a7', '--accent': '#cc9966' } }, // Accent set to a gold/tan
-      luxury: { name: 'Luxury', vars: { '--bg': '#002366', '--text': '#F5BD02', '--muted': '#d4b6a7', '--accent': '#F5BD02' } }, // Accent set to the gold text color
-      elegant: { name: 'Elegant', vars: { '--bg': '#358597', '--text': '#F4a896', '--muted': '#ffffff', '--accent': '#F4a896' } } // Accent set to the text color
+      light: { name: 'Clean Light', vars: { '--bg': '#ffffff', '--text': '#0b1220', '--muted': '#64748b', '--accent': '#2563eb', '--panel':'#ffffff' } },
+      dark: { name: 'Midnight', vars: { '--bg': '#071428', '--text': '#e6eef8', '--muted': '#9aa6bf', '--accent': '#06b6d4', '--panel':'#10213d' } },
+      royal: { name: 'Royal Lux', vars: { '--bg': '#0f1724', '--text': '#fff1e6', '--muted': '#d4b6a7', '--accent': '#cc9966', '--panel':'#20293d' } },
+      luxury: { name: 'Luxury', vars: { '--bg': '#002366', '--text': '#F5BD02', '--muted': '#d4b6a7', '--accent': '#F5BD02', '--panel':'#002b80' } },
+      elegant: { name: 'Elegant', vars: { '--bg': '#358597', '--text': '#F4a896', '--muted': '#ffffff', '--accent': '#F4a896', '--panel':'#4f99a9' } }
     };
     
-    const state = {
-      theme: 'light', // Set to 'light' (Clean Light)
+    // Initial state check for local storage
+    const STORAGE_KEY = 'RiDesign_Site_Data_v2';
+    let state = {
+      theme: 'light',
       blocks: [
         { id: id(), type: 'hero', data: { title: 'Your Awesome Custom Site', subtitle: 'A one-liner that slaps', link:'', animation: { type:'fade', duration:600, delay:0 } } },
-        { id: id(), type: 'card', data: { title: 'New Card Feature', body:'This is a custom card block with a simple title and body.', animation:{type:'slideup',duration:600,delay:100} } },
+        { id: id(), type: 'quote', data: { text: 'This tool is simple, powerful, and requires no backend—it’s amazing!', author: 'A Happy Creator', source: 'Twitter', animation:{type:'slideup',duration:600,delay:100} } },
+        { id: id(), type: 'accordion', data: { items: [{title:'What is RiDesign?', content:'It is an advanced web builder for creative projects.'},{title:'Is it free?', content:'Yes, it runs entirely in your browser!'}], animation:{type:'slideup',duration:600,delay:100} } },
         { id: id(), type: 'text', data: { text: 'This is a paragraph. Edit me!', link:'', animation:{type:'none',duration:600,delay:0} } }
       ],
+      customCSS: '/* Add your custom CSS here, e.g.:\n.site-body { margin-top: 40px; }\n*/', // New custom CSS field
       selected: null
     };
 
@@ -230,24 +260,78 @@
     const status = el('#status');
     const themeTag = el('#themeTag');
     const themeSelect = el('#themeSelect');
+    const saveBtn = el('#saveBtn'); // New Ref
+    const loadBtn = el('#loadBtn'); // New Ref
+    
+    /* --------- LocalStorage Save/Load (New Feature) --------- */
 
-    // init
+    function saveStateToLocalStorage() {
+      try {
+        const serialisedState = JSON.stringify({
+          theme: state.theme,
+          blocks: state.blocks,
+          customCSS: state.customCSS,
+        });
+        localStorage.setItem(STORAGE_KEY, serialisedState);
+        flashStatus('Site saved to browser!');
+      } catch (e) {
+        flashStatus('Error saving site to browser!', 2000);
+        console.error("Could not save state to localStorage", e);
+      }
+    }
+
+    function loadStateFromLocalStorage() {
+      try {
+        const serialisedState = localStorage.getItem(STORAGE_KEY);
+        if (serialisedState === null) {
+          flashStatus('No saved site found.', 1500);
+          return;
+        }
+        const loadedState = JSON.parse(serialisedState);
+        
+        // Merge loaded state with defaults to handle new fields like customCSS gracefully
+        state = { 
+            ...state, 
+            ...loadedState,
+            blocks: loadedState.blocks || [],
+        };
+        
+        // Update UI
+        themeSelect.value = state.theme;
+        updateThemeTag();
+        renderBlocksList();
+        renderPreview();
+        if(state.selected) openEditor(state.selected); else closeEditor();
+        flashStatus('Site loaded from browser!');
+      } catch (e) {
+        flashStatus('Error loading site from browser!', 2000);
+        console.error("Could not load state from localStorage", e);
+      }
+    }
+
+    // init: Load state on startup
+    loadStateFromLocalStorage();
+    
+    // wire theme selector and buttons
     initThemeSelect();
     renderBlocksList();
     renderPreview();
-    if(state.blocks.length) openEditor(state.blocks[0].id); // open first block editor for convenience
+    if(state.blocks.length && !state.selected) openEditor(state.blocks[0].id);
 
-    // wire add buttons
     document.querySelectorAll('[data-add]').forEach(btn=>{
       btn.addEventListener('click', ()=> addBlock(btn.getAttribute('data-add')));
     });
 
-    // wire theme selector
     themeSelect.addEventListener('change', (e) => {
         state.theme = e.target.value;
         updateThemeTag();
         renderPreview();
+        saveStateToLocalStorage(); // Save state on theme change
     });
+    
+    saveBtn.addEventListener('click', saveStateToLocalStorage);
+    loadBtn.addEventListener('click', loadStateFromLocalStorage);
+    
 
     function updateThemeTag(){ themeTag.textContent = 'Theme: ' + themePresets[state.theme].name }
 
@@ -262,7 +346,7 @@
     }
 
 
-    /* --------- Block ops (added: card and section blocks) --------- */
+    /* --------- Block ops (added: quote and custom-css blocks) --------- */
     function addBlock(type){
       const defaultData = (t=>{
         if(t==='hero') return { title:'New Title', subtitle:'Subtitle', link:'', animation:{type:'fade',duration:600,delay:0} };
@@ -272,14 +356,26 @@
         if(t==='two-col') return { left:'Left', right:'Right', animation:{type:'none',duration:600,delay:0} };
         if(t==='button') return { label:'Click Me', url:'', style:'primary', newTab:true };
         if(t==='card') return { title:'Card Title', body:'Card body text.', animation:{type:'fade',duration:600,delay:0} };
-        if(t==='section') return { title:'', bg_color:'#efefef', animation:{type:'none',duration:600,delay:0} };
+        if(t==='section') return { title:'Section Title', bg_color:'#efefef', animation:{type:'none',duration:600,delay:0} };
+        if(t==='accordion') return { items: [{title:'Question 1', content:'Answer to question 1.'}], animation:{type:'fade',duration:600,delay:0} };
+        if(t==='table') return { columns:['Header 1','Header 2'], rows:[['Cell 1','Cell 2'],['Cell 3','Cell 4']], animation:{type:'fade',duration:600,delay:0} };
+        if(t==='quote') return { text:'Life is what happens when you are busy making other plans.', author:'John Lennon', source:'Quote', animation:{type:'fade',duration:600,delay:0} };
+        if(t==='custom-css') return { css: state.customCSS }; // Special case: this should probably only exist once, but we handle it as a block for editing
         return {};
       })(type);
+      
+      if(type === 'custom-css'){
+          // Don't add a block, just open the editor for the global custom CSS field
+          openCustomCssEditor();
+          return;
+      }
+      
       const b = { id:id(), type, data: defaultData };
       state.blocks.push(b);
       renderBlocksList();
       renderPreview();
       openEditor(b.id);
+      saveStateToLocalStorage(); // Save state on block add
     }
 
     function removeBlock(bid){
@@ -287,12 +383,14 @@
       if(state.selected===bid) state.selected=null;
       renderBlocksList(); renderPreview();
       if(state.selected===null) closeEditor();
+      saveStateToLocalStorage(); // Save state on block remove
     }
 
     function updateBlock(bid, patch){
       state.blocks = state.blocks.map(b => b.id===bid ? { ...b, data: { ...b.data, ...patch } } : b);
       renderPreview();
       renderBlocksList();
+      saveStateToLocalStorage(); // Save state on block update
     }
 
     function setBlockData(bid, keyPath, value){
@@ -318,6 +416,19 @@
         row.className = 'block-row';
         row.draggable = true;
         row.dataset.id = b.id;
+        
+        // Custom CSS blocks are not draggable and are handled by a special editor function
+        if(b.type === 'custom-css'){
+             row.className = 'block-row';
+             row.draggable = false;
+             row.innerHTML = `<div class="block-type">CUSTOM CSS (GLOBAL)</div>
+                             <div class="small" style="margin-left:8px">Injected into <head></div>
+                             <div class="block-actions"><button title="Edit">✏️</button></div>`;
+             row.querySelector('button[title="Edit"]').addEventListener('click', openCustomCssEditor);
+             blocksList.appendChild(row);
+             return;
+        }
+        
         row.innerHTML = `<div class="block-type">${b.type.toUpperCase()}</div>
                          <div class="small" style="margin-left:8px">${blockSummary(b)}</div>
                          <div class="block-actions">
@@ -329,7 +440,7 @@
         row.addEventListener('dragstart', e=>{ dragId=b.id; row.classList.add('dragging'); e.dataTransfer.effectAllowed='move' });
         row.addEventListener('dragend', ()=>{ dragId=null; row.classList.remove('dragging') });
         row.addEventListener('dragover', e=> e.preventDefault());
-        row.addEventListener('drop', e=>{ e.preventDefault(); if(!dragId||dragId===b.id) return; reorderBlocks(dragId,b.id); renderBlocksList(); renderPreview(); });
+        row.addEventListener('drop', e=>{ e.preventDefault(); if(!dragId||dragId===b.id) return; reorderBlocks(dragId,b.id); renderBlocksList(); renderPreview(); saveStateToLocalStorage(); });
         blocksList.appendChild(row);
       });
     }
@@ -343,6 +454,10 @@
       if(b.type==='button') return escapeHtml(b.data.label||'Button') + (b.data.url? ' → ' + escapeHtml(b.data.url):'');
       if(b.type==='card') return escapeHtml(b.data.title||'Card Title');
       if(b.type==='section') return (b.data.title ? escapeHtml(b.data.title) : '[Section]') + ' bg:' + escapeHtml(b.data.bg_color||'');
+      if(b.type==='accordion') return `${b.data.items.length} items`;
+      if(b.type==='table') return `${b.data.columns.length} cols, ${b.data.rows.length} rows`;
+      if(b.type==='quote') return (String(b.data.text||'').slice(0,40) + '…') + (b.data.author ? ` - ${b.data.author}` : '');
+      if(b.type==='custom-css') return `Size: ${state.customCSS.length} chars`;
       return '';
     }
 
@@ -359,16 +474,21 @@
       const b = state.blocks.find(x=>x.id===bid);
       if(!b) return;
       const copy = JSON.parse(JSON.stringify(b)); copy.id = id();
-      state.blocks.push(copy); renderBlocksList(); renderPreview();
+      state.blocks.push(copy); renderBlocksList(); renderPreview(); saveStateToLocalStorage();
     }
 
-    /* --------- Editor UI (unchanged) --------- */
+    /* --------- Editor UI (includes quote field) --------- */
     function openEditor(bid){
       const b = state.blocks.find(x=>x.id===bid); if(!b) return;
       state.selected = bid;
       editorWrap.style.display = 'block';
       editorTitle.textContent = 'Edit: ' + b.type.toUpperCase();
       editorFields.innerHTML = '';
+      
+      removeBlockBtn.style.display = 'block'; // Ensure remove button is visible for blocks
+      removeBlockBtn.onclick = ()=> { if(confirm('Remove this block?')) removeBlock(bid) };
+
+
       // common: animation controls
       if(b.type !== 'button'){
         const animSection = document.createElement('div');
@@ -474,9 +594,109 @@
         addField('Section Title (optional)', b.data.title||'', v=> updateBlock(bid,{ title:v }));
         addField('Background Color (CSS value)', b.data.bg_color||'#efefef', v=> updateBlock(bid,{ bg_color:v }));
       }
+      if(b.type==='accordion'){
+        const wrap = document.createElement('div'); wrap.style.marginTop='10px';
+        const renderAccordionItems = () => {
+          wrap.innerHTML = '<label>Accordion Items</label>';
+          (b.data.items||[]).forEach((item, index) => {
+            const itemWrap = document.createElement('div'); itemWrap.style.border='1px solid #eee'; itemWrap.style.padding='8px'; itemWrap.style.borderRadius='6px'; itemWrap.style.marginBottom='8px';
+            
+            const titleInput = document.createElement('input'); titleInput.type='text'; titleInput.value=item.title; titleInput.placeholder='Title';
+            titleInput.style.marginBottom='4px'; titleInput.addEventListener('input', v => { b.data.items[index].title = titleInput.value; updateBlock(bid, b.data); });
+            
+            const contentTextarea = document.createElement('textarea'); contentTextarea.value=item.content; contentTextarea.placeholder='Content';
+            contentTextarea.style.minHeight='40px'; contentTextarea.addEventListener('input', v => { b.data.items[index].content = contentTextarea.value; updateBlock(bid, b.data); });
+            
+            const removeBtn = document.createElement('button'); removeBtn.className='btn'; removeBtn.textContent='Remove Item'; removeBtn.style.marginTop='4px';
+            removeBtn.addEventListener('click', () => { b.data.items.splice(index, 1); updateBlock(bid, b.data); openEditor(bid); });
+            
+            itemWrap.appendChild(titleInput); itemWrap.appendChild(contentTextarea); itemWrap.appendChild(removeBtn);
+            wrap.appendChild(itemWrap);
+          });
 
-      removeBlockBtn.onclick = ()=> { if(confirm('Remove this block?')) removeBlock(bid) };
+          const addBtn = document.createElement('button'); addBtn.className='btn btn-primary'; addBtn.textContent='Add Item';
+          addBtn.addEventListener('click', () => { b.data.items.push({title:'New Question', content:'New Answer'}); updateBlock(bid, b.data); openEditor(bid); });
+          wrap.appendChild(addBtn);
+        };
+        editorFields.appendChild(wrap);
+        renderAccordionItems();
+      }
+      if(b.type==='table'){
+        const wrap = document.createElement('div'); wrap.style.marginTop='10px';
+        const renderTableEditor = () => {
+          wrap.innerHTML = '';
+          
+          // Columns
+          const colLabel = document.createElement('label'); colLabel.textContent='Column Headers (comma separated)';
+          const colInput = document.createElement('input'); colInput.type='text'; colInput.value=b.data.columns.join(',');
+          colInput.addEventListener('input', () => { 
+            b.data.columns = colInput.value.split(',').map(c => c.trim()); 
+            updateBlock(bid, b.data);
+            renderTableEditor(); // Rerender to adjust row inputs
+          });
+          wrap.appendChild(colLabel); wrap.appendChild(colInput);
+          
+          // Rows
+          const rowLabel = document.createElement('label'); rowLabel.textContent=`Table Rows (enter ${b.data.columns.length} comma separated values per row)`;
+          rowLabel.style.marginTop='12px';
+          wrap.appendChild(rowLabel);
+
+          (b.data.rows||[]).forEach((row, rowIndex) => {
+            const rowWrap = document.createElement('div'); rowWrap.style.display='flex'; rowWrap.style.gap='8px'; rowWrap.style.alignItems='center'; rowWrap.style.marginBottom='8px';
+            
+            const rowInput = document.createElement('input'); rowInput.type='text'; rowInput.value=row.join(','); rowInput.style.flex='1';
+            rowInput.addEventListener('input', () => {
+              b.data.rows[rowIndex] = rowInput.value.split(',').map(c => c.trim());
+              updateBlock(bid, b.data);
+            });
+            
+            const removeBtn = document.createElement('button'); removeBtn.className='btn'; removeBtn.textContent='-';
+            removeBtn.addEventListener('click', () => { b.data.rows.splice(rowIndex, 1); updateBlock(bid, b.data); renderTableEditor(); });
+            
+            rowWrap.appendChild(rowInput); rowWrap.appendChild(removeBtn);
+            wrap.appendChild(rowWrap);
+          });
+
+          const addRowBtn = document.createElement('button'); addRowBtn.className='btn btn-primary'; addRowBtn.textContent='Add Row';
+          addRowBtn.addEventListener('click', () => { b.data.rows.push(Array(b.data.columns.length).fill('')); updateBlock(bid, b.data); renderTableEditor(); });
+          wrap.appendChild(addRowBtn);
+          
+          const hint = document.createElement('div'); hint.className='small'; hint.textContent=`Tip: You must enter exactly ${b.data.columns.length} comma separated values per row.`;
+          wrap.appendChild(hint);
+        };
+        editorFields.appendChild(wrap);
+        renderTableEditor();
+      }
+      // New: Quote Editor
+      if(b.type==='quote'){
+        addTextarea('Quote Text', b.data.text||'', v=> updateBlock(bid,{ text:v }));
+        addField('Author', b.data.author||'', v=> updateBlock(bid,{ author:v }));
+        addField('Source/Link (optional)', b.data.source||'', v=> updateBlock(bid,{ source:v }));
+      }
     }
+    
+    function openCustomCssEditor(){
+        state.selected = null; // Deselect any block
+        editorWrap.style.display = 'block';
+        editorTitle.textContent = 'Edit: CUSTOM CSS (GLOBAL)';
+        editorFields.innerHTML = '';
+        removeBlockBtn.style.display = 'none'; // No remove button for global CSS
+
+        const ta = document.createElement('textarea');
+        ta.value = state.customCSS || '';
+        ta.style.minHeight = '200px';
+        ta.style.fontFamily = 'monospace';
+        
+        ta.addEventListener('input', () => {
+            state.customCSS = ta.value;
+            renderPreview();
+            renderBlocksList();
+            saveStateToLocalStorage();
+        });
+        
+        editorFields.appendChild(ta);
+    }
+
 
     function closeEditor(){ editorWrap.style.display='none'; state.selected=null; }
 
@@ -549,15 +769,20 @@
       };
     }
 
-    /* --------- Preview rendering (uses themePresets) --------- */
+    /* --------- Preview rendering (uses themePresets + new blocks) --------- */
     function renderPreview(){
       previewBody.innerHTML = '';
       const root = document.createElement('div'); root.className='site-root';
       const container = document.createElement('div'); container.className='container';
       
-      const theme = themePresets[state.theme]; // Use selected theme
-      container.style.background = theme.vars['--bg'];
-      container.style.color = theme.vars['--text'];
+      const theme = themePresets[state.theme];
+      
+      // Inject Custom CSS into Preview (using a <style> tag)
+      if(state.customCSS && state.customCSS.trim()){
+          const style = document.createElement('style');
+          style.textContent = state.customCSS;
+          container.appendChild(style); // Append to container for encapsulation in preview
+      }
       
       state.blocks.forEach(b=>{
         const wrapper = document.createElement('div');
@@ -572,13 +797,13 @@
         // block types
         if(b.type==='hero'){
           const header = document.createElement('div'); header.className='site-hero';
-          const h = document.createElement('h1'); h.className='site-title';
+          const h = document.createElement('h1'); h.className='site-title'; h.style.color=theme.vars['--text'];
           if(b.data.link){
             const a = document.createElement('a'); a.href = b.data.link; a.target='_blank'; a.style.color='inherit'; a.style.textDecoration='none';
             a.textContent = b.data.title||'';
             h.appendChild(a);
           } else { h.textContent = b.data.title||''; }
-          const p = document.createElement('p'); p.className='site-sub';
+          const p = document.createElement('p'); p.className='site-sub'; p.style.color=theme.vars['--muted'];
           if(b.data.link){
             const a2 = document.createElement('a'); a2.href = b.data.link; a2.target='_blank'; a2.style.color='inherit'; a2.style.textDecoration='none';
             a2.textContent = b.data.subtitle||'';
@@ -587,6 +812,7 @@
           header.appendChild(h); header.appendChild(p); wrapper.appendChild(header);
         } else if(b.type==='text'){
           const p = document.createElement('p'); p.style.whiteSpace='pre-wrap'; p.textContent = b.data.text||'';
+          p.style.color = theme.vars['--text'];
           if(b.data.link){
             const a = document.createElement('a'); a.href = b.data.link; a.target='_blank'; a.style.color='inherit'; a.style.textDecoration='none';
             a.appendChild(p);
@@ -594,8 +820,8 @@
           } else wrapper.appendChild(p);
         } else if(b.type==='two-col'){
           const wrap = document.createElement('div'); wrap.className='two-col';
-          const l = document.createElement('div'); l.innerHTML = '<div style="white-space:pre-wrap">' + escapeHtml(b.data.left||'') + '</div>';
-          const r = document.createElement('div'); r.innerHTML = '<div style="white-space:pre-wrap">' + escapeHtml(b.data.right||'') + '</div>';
+          const l = document.createElement('div'); l.innerHTML = '<div style="white-space:pre-wrap;color:'+theme.vars['--text']+'">' + escapeHtml(b.data.left||'') + '</div>';
+          const r = document.createElement('div'); r.innerHTML = '<div style="white-space:pre-wrap;color:'+theme.vars['--text']+'">' + escapeHtml(b.data.right||'') + '</div>';
           wrap.appendChild(l); wrap.appendChild(r); wrapper.appendChild(wrap);
         } else if(b.type==='image'){
           const align = b.data.align || 'center';
@@ -607,7 +833,7 @@
           if(b.data.link){
             const a = document.createElement('a'); a.href = b.data.link; a.target='_blank'; a.appendChild(imgEl); imgWrap.appendChild(a);
           } else imgWrap.appendChild(imgEl);
-          if(b.data.caption) { const cap = document.createElement('div'); cap.className='small'; cap.textContent = b.data.caption; cap.style.marginTop='8px'; imgWrap.appendChild(cap); }
+          if(b.data.caption) { const cap = document.createElement('div'); cap.className='small'; cap.textContent = b.data.caption; cap.style.marginTop='8px'; cap.style.color=theme.vars['--muted']; imgWrap.appendChild(cap); }
           wrapper.appendChild(imgWrap);
         } else if(b.type==='video'){
           const vidWrap = document.createElement('div'); vidWrap.style.textAlign = 'center';
@@ -637,23 +863,24 @@
           // overlay CTA
           if(b.data.overlayCTA && b.data.overlayCTA.show){
             const cta = document.createElement('a'); cta.className='video-cta ' + (b.data.overlayCTA.position||'center');
-            cta.href = b.data.overlayCTA.url || '#'; cta.target = '_blank';
+            cta.href = b.data.overlayCTA.url || '#'; cta.target = '_blank'; cta.style.background=theme.vars['--accent'];
             cta.textContent = b.data.overlayCTA.label || 'Watch Now';
             outer.appendChild(cta);
           }
           vidWrap.appendChild(outer);
-          if(b.data.caption) { const cap = document.createElement('div'); cap.className='small'; cap.textContent = b.data.caption; cap.style.marginTop='8px'; vidWrap.appendChild(cap); }
+          if(b.data.caption) { const cap = document.createElement('div'); cap.className='small'; cap.textContent = b.data.caption; cap.style.marginTop='8px'; cap.style.color=theme.vars['--muted']; vidWrap.appendChild(cap); }
           wrapper.appendChild(vidWrap);
         } else if(b.type==='button'){
           const btnWrap = document.createElement('div'); btnWrap.style.marginTop='8px';
           const a = document.createElement('a'); a.className='call-to-action ' + (b.data.style==='outline' ? 'cta-outline':'cta-primary');
           a.href = b.data.url || '#'; a.textContent = b.data.label || 'Click'; if(b.data.newTab) a.target='_blank';
+          if(b.data.style==='primary') a.style.background=theme.vars['--accent'];
+          if(b.data.style==='outline') a.style.color=theme.vars['--text'];
           btnWrap.appendChild(a); wrapper.appendChild(btnWrap);
         } else if(b.type==='card'){
           const card = document.createElement('div'); 
-          // Reusing .preview-card class from builder UI for a nice card style
           card.className='preview-card'; 
-          card.innerHTML = `<div style="padding:16px;font-weight:700">${escapeHtml(b.data.title||'')}</div><div style="padding:16px;border-top:1px solid #f0f3f7;white-space:pre-wrap">${escapeHtml(b.data.body||'')}</div>`;
+          card.innerHTML = `<div style="padding:16px;font-weight:700;color:${theme.vars['--text']}">${escapeHtml(b.data.title||'')}</div><div style="padding:16px;border-top:1px solid #f0f3f7;white-space:pre-wrap;color:${theme.vars['--muted']}">${escapeHtml(b.data.body||'')}</div>`;
           wrapper.appendChild(card);
         } else if(b.type==='section'){
           const section = document.createElement('div');
@@ -661,9 +888,74 @@
           section.style.borderRadius='var(--radius)';
           section.style.background = b.data.bg_color || '#efefef';
           section.style.marginBottom = '20px';
-          // Use site text color for section title
           section.innerHTML = b.data.title ? `<h2 style="margin:0 0 16px 0;font-size:24px;color:${theme.vars['--text']}">${escapeHtml(b.data.title)}</h2>` : '';
           wrapper.appendChild(section);
+        } else if(b.type==='accordion'){
+          const acc = document.createElement('div'); acc.className='site-accordion';
+          (b.data.items||[]).forEach(item => {
+            const details = document.createElement('details');
+            const summary = document.createElement('summary'); summary.textContent = item.title; summary.style.color=theme.vars['--text'];
+            const content = document.createElement('div'); content.className='site-accordion-content'; content.textContent = item.content; content.style.color=theme.vars['--muted'];
+            details.appendChild(summary); details.appendChild(content);
+            acc.appendChild(details);
+          });
+          wrapper.appendChild(acc);
+        } else if(b.type==='table'){
+          const tableWrap = document.createElement('div'); tableWrap.className='site-table-wrap';
+          const table = document.createElement('table'); table.className='site-table';
+          
+          if(b.data.columns && b.data.columns.length){
+            const thead = document.createElement('thead');
+            const tr = document.createElement('tr');
+            b.data.columns.forEach(col => {
+              const th = document.createElement('th'); th.textContent = escapeHtml(col);
+              th.style.color = theme.vars['--text'];
+              tr.appendChild(th);
+            });
+            thead.appendChild(tr); table.appendChild(thead);
+          }
+          
+          if(b.data.rows && b.data.rows.length){
+            const tbody = document.createElement('tbody');
+            b.data.rows.forEach(row => {
+              const tr = document.createElement('tr');
+              const numCells = b.data.columns.length;
+              for(let i=0; i<numCells; i++){
+                const td = document.createElement('td'); 
+                td.textContent = escapeHtml(row[i] || '');
+                td.style.color = theme.vars['--muted'];
+                tr.appendChild(td);
+              }
+              tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+          }
+          
+          tableWrap.appendChild(table);
+          wrapper.appendChild(tableWrap);
+        } else if(b.type==='quote'){ // New: Quote Block Rendering
+            const quoteEl = document.createElement('blockquote');
+            quoteEl.className = 'site-quote';
+            quoteEl.style.borderColor = theme.vars['--accent'];
+            
+            const quoteText = document.createElement('p');
+            quoteText.style.color = theme.vars['--text'];
+            quoteText.textContent = `“${b.data.text || '[Quote text here]' }”`;
+            quoteEl.appendChild(quoteText);
+            
+            if(b.data.author){
+                const footer = document.createElement('footer');
+                let footerContent = `<strong>${escapeHtml(b.data.author)}</strong>`;
+                if(b.data.source){
+                    const sourceText = escapeHtml(b.data.source);
+                    footerContent += b.data.source.startsWith('http') ? 
+                        ` <cite>— <a href="${sourceText}" target="_blank" style="color:inherit;text-decoration:none">${sourceText}</a></cite>` :
+                        ` <cite>— ${sourceText}</cite>`;
+                }
+                footer.innerHTML = footerContent;
+                quoteEl.appendChild(footer);
+            }
+            wrapper.appendChild(quoteEl);
         }
         container.appendChild(wrapper);
       });
@@ -706,7 +998,7 @@
       }catch(e){ return url; }
     }
 
-    /* --------- Export: generate HTML with inline CSS + embedded assets + CTA support (uses themePresets) --------- */
+    /* --------- Export: generate HTML with inline CSS + embedded assets + CTA support (uses themePresets + new blocks) --------- */
     function generateExportHtml(){
       const theme = themePresets[state.theme]; // Use selected theme
       const themeCssVars = Object.entries(theme.vars).map(([k,v])=>`${k}:${v};`).join('');
@@ -740,7 +1032,22 @@ img.responsive{max-width:100%;height:auto;border-radius:8px;display:block;margin
 .cta-primary{background:var(--accent);color:#fff}
 .cta-outline{background:#fff;border:1px solid #eef3ff;color:#0b1220}
 .site-card{background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(11,17,34,0.08);overflow:hidden}
+.site-accordion{margin:18px 0;border-radius:8px;overflow:hidden;border:1px solid #eef3ff;background:#fff;}
+.site-accordion details{border-bottom:1px solid #eef3ff;}
+.site-accordion details:last-child{border-bottom:none;}
+.site-accordion summary{padding:12px 16px;cursor:pointer;font-weight:600;outline:none;background:#f9fbfc;color:var(--text);}
+.site-accordion-content{padding:12px 16px;white-space:pre-wrap;color:var(--muted);}
+.site-table-wrap{overflow-x:auto;}
+.site-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;border:1px solid #eef3ff;border-radius:8px;overflow:hidden;}
+.site-table th, .site-table td{padding:10px;border:1px solid #eef3ff;text-align:left;}
+.site-table th{background:#f9fbfc;font-weight:700;color:var(--text);}
+.site-quote{font-style:italic;font-size:1.2rem;padding:20px;border-left:4px solid var(--accent);background:var(--panel);border-radius:8px;margin:18px 0;}
+.site-quote footer{margin-top:12px;font-size:0.9rem;font-style:normal;color:var(--muted);text-align:right;}
+.site-quote footer strong{font-weight:700;color:var(--text);}
 `;
+    // Inject Custom CSS
+    const customCssBlock = (state.customCSS && state.customCSS.trim()) ? `\n\n/* --- CUSTOM USER CSS --- */\n${state.customCSS}\n/* ----------------------- */\n` : '';
+    
       const blocksHtml = state.blocks.map(b=>{
         const anim = b.data.animation || {type:'none',duration:600,delay:0};
         const animClass = anim.type && anim.type!=='none' ? `class="anim-${anim.type}" style="animation-duration:${anim.duration}ms;animation-delay:${anim.delay}ms;"` : '';
@@ -814,7 +1121,6 @@ img.responsive{max-width:100%;height:auto;border-radius:8px;display:block;margin
         if(b.type==='card'){
           const title = escapeHtml(b.data.title||'');
           const body = escapeHtml(b.data.body||'');
-          // Note: .site-card uses hardcoded white background for better visual contrast in most themes
           return `<div ${animClass} style="margin:18px 0"><div class="site-card"><div style="padding:16px;font-weight:700">${title}</div><div style="padding:16px;border-top:1px solid #f0f3f7;white-space:pre-wrap">${body}</div></div></div>`;
         }
         if(b.type==='section'){
@@ -822,11 +1128,54 @@ img.responsive{max-width:100%;height:auto;border-radius:8px;display:block;margin
           const bg = escapeHtml(b.data.bg_color||'#efefef');
           return `<div ${animClass} style="padding:20px;border-radius:12px;background:${bg};margin:18px 0">${title}<div class="section-content"></div></div>`;
         }
+        if(b.type==='accordion'){
+          const itemsHtml = (b.data.items||[]).map(item => `
+            <details>
+              <summary>${escapeHtml(item.title)}</summary>
+              <div class="site-accordion-content">${escapeHtml(item.content)}</div>
+            </details>
+          `).join('');
+          return `<div ${animClass} class="site-accordion">${itemsHtml}</div>`;
+        }
+        if(b.type==='table'){
+          const headerHtml = (b.data.columns && b.data.columns.length) ? 
+            `<thead><tr>${b.data.columns.map(col => `<th>${escapeHtml(col)}</th>`).join('')}</tr></thead>` : '';
+            
+          const bodyHtml = (b.data.rows && b.data.rows.length) ? 
+            `<tbody>${b.data.rows.map(row => {
+              const cells = [];
+              const numCells = b.data.columns.length;
+              for(let i=0; i<numCells; i++){
+                cells.push(`<td>${escapeHtml(row[i] || '')}</td>`);
+              }
+              return `<tr>${cells.join('')}</tr>`;
+            }).join('')}</tbody>` : '';
+            
+          const tableHtml = `<div class="site-table-wrap"><table class="site-table">${headerHtml}${bodyHtml}</table></div>`;
+          return `<div ${animClass} style="margin:18px 0">${tableHtml}</div>`;
+        }
+        if(b.type==='quote'){
+            const text = escapeHtml(b.data.text||'[Quote text here]');
+            const author = escapeHtml(b.data.author||'');
+            const source = escapeHtml(b.data.source||'');
+            
+            let footerHtml = '';
+            if(author){
+                let sourceLink = '';
+                if(source){
+                    sourceLink = source.startsWith('http') ? 
+                        `<cite>— <a href="${source}" target="_blank" style="color:inherit;text-decoration:none">${source}</a></cite>` :
+                        `<cite>— ${source}</cite>`;
+                }
+                footerHtml = `<footer><strong>${author}</strong> ${sourceLink}</footer>`;
+            }
+            return `<blockquote ${animClass} class="site-quote"><p>${text}</p>${footerHtml}</blockquote>`;
+        }
         return '';
       }).join('\n');
 
       const html = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Exported Site</title><style>${themeCss}\n${sharedCss}</style></head><body><div class="container">${blocksHtml}</div></body></html>`;
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Exported Site</title><style>${themeCss}\n${sharedCss}${customCssBlock}</style></head><body><div class="container">${blocksHtml}</div></body></html>`;
       return html;
     }
 
@@ -857,26 +1206,31 @@ img.responsive{max-width:100%;height:auto;border-radius:8px;display:block;margin
 
     function flashStatus(msg, ms=1400){ status.textContent = msg; setTimeout(()=> status.textContent='Ready', ms) }
 	const shareBtn = document.getElementById('shareBtn');
-shareBtn.addEventListener('click', () => {
-  const html = generateExportHtml();
-  const blob = new Blob([html], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
+    shareBtn.addEventListener('click', () => {
+      const html = generateExportHtml();
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
 
-  // Show the share link
-  const linkBox = document.createElement('div');
-  linkBox.style.marginTop = '10px';
-  linkBox.style.padding = '8px';
-  linkBox.style.background = '#fff';
-  linkBox.style.borderRadius = '8px';
-  linkBox.style.boxShadow = '0 2px 6px rgba(0,0,0,0.1)';
-  linkBox.innerHTML = `
-    <strong>Share this link:</strong><br>
-    <a href="${url}" target="_blank">${url}</a>
-  `;
+      // Show the share link
+      const linkBox = document.createElement('div');
+      linkBox.style.marginTop = '10px';
+      linkBox.style.padding = '8px';
+      linkBox.style.background = '#fff';
+      linkBox.style.borderRadius = '8px';
+      linkBox.style.boxShadow = '0 2px 6px rgba(0,0,0,0.1)';
+      linkBox.innerHTML = `
+        <strong>Share Link (view only):</strong><br>
+        <a href="${url}" target="_blank">${url}</a>
+        <div class="muted-small">Note: This link is temporary and only works while this builder tab remains open.</div>
+      `;
 
-  document.body.appendChild(linkBox);
-  flashStatus('Share link created!');
-});
+      // Clear previous share link and add new one
+      const aside = document.querySelector('aside');
+      aside.querySelectorAll('.share-link-box').forEach(el => el.remove());
+      linkBox.classList.add('share-link-box');
+      aside.appendChild(linkBox);
+      flashStatus('Share link created!');
+    });
 
   </script>
 </body>
